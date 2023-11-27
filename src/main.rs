@@ -61,10 +61,10 @@ fn collisions(mut q: Query<(Entity, &mut Transform, &mut Planet)>, mut c: Comman
        && t1.translation.distance(t2.translation) < p1.radius() + p2.radius()
     {
       let total_mass = p1.mass + p2.mass;
+      t1.translation = (t1.translation * p1.mass + t2.translation * p2.mass) / total_mass;
       *p1 = Planet { vel: (p1.vel * p1.mass + p2.vel * p2.mass) / total_mass,
                      color: p1.color,
                      mass: total_mass };
-      t1.translation = (t1.translation * p1.mass + t2.translation * p2.mass) / total_mass;
       t1.scale = Vec3::ONE * p1.radius();
       // *t1 = Transform { translation: (t1.translation * p1.mass + t2.translation * p2.mass)
       //                                / total_mass,
