@@ -1,11 +1,11 @@
 #![allow(unused_imports)]
 #![allow(dead_code)]
 
-use bevy::window::PresentMode;
+use rust_utils::MutateTrait;
 
 use {bevy::{input::mouse::MouseMotion,
             prelude::*,
-            window::{Cursor, CursorGrabMode, WindowMode}},
+            window::{Cursor, CursorGrabMode, PresentMode}},
      rand::{distributions::uniform::{SampleRange, SampleUniform},
             prelude::*},
      rust_utils::dotimes};
@@ -14,11 +14,11 @@ use {bevy::{input::mouse::MouseMotion,
 // const LOOK_SPEED: f32 = 0.002;
 
 fn vec3(x: f32, y: f32, z: f32) -> Vec3 { Vec3 { x, y, z } }
-fn vec3_from_spherical_coords(yaw: f32, pitch: f32) -> Vec3 {
-  vec3(yaw.cos() * pitch.cos(),
-       pitch.sin(),
-       yaw.sin() * pitch.cos()).normalize()
-}
+// fn vec3_from_spherical_coords(yaw: f32, pitch: f32) -> Vec3 {
+//   vec3(yaw.cos() * pitch.cos(),
+//        pitch.sin(),
+//        yaw.sin() * pitch.cos()).normalize()
+// }
 #[derive(Clone, Component)]
 struct Planet {
   vel: Vec3,
@@ -61,11 +61,15 @@ fn collisions(mut q: Query<(Entity, &mut Transform, &mut Planet)>, mut c: Comman
        && t1.translation.distance(t2.translation) < p1.radius() + p2.radius()
     {
       let total_mass = p1.mass + p2.mass;
-      t1.translation = (t1.translation * p1.mass + t2.translation * p2.mass) / total_mass;
       *p1 = Planet { vel: (p1.vel * p1.mass + p2.vel * p2.mass) / total_mass,
                      color: p1.color,
                      mass: total_mass };
+      t1.translation = (t1.translation * p1.mass + t2.translation * p2.mass) / total_mass;
       t1.scale = Vec3::ONE * p1.radius();
+      // *t1 = Transform { translation: (t1.translation * p1.mass + t2.translation * p2.mass)
+      //                                / total_mass,
+      //                   scale: Vec3::ONE * p1.radius(),
+      //                   ..*t1 };
       c.entity(e2).despawn();
     }
   }
@@ -79,67 +83,79 @@ fn init(mut c: Commands,
                           ..default() });
   let sphere = meshes.add(shape::Icosphere::default().try_into().unwrap());
   dotimes! {NUM_PLANETS,{
-    let r = rng(0.01..0.99);
-    let g = rng(0.01..0.99);
-    let b = rng(0.01..0.99);
-    let color = Color::rgb(r, g, b);
-    let mass = (rng(0.0002..0.6) as f32).powi(2);
-    let speed = 0.03;
-    c.spawn((
-      Planet { color ,
-               vel: vec3(rng(-speed..speed),rng(-speed..speed), rng(-speed..speed)),
-               mass },
-      PbrBundle{ mesh: sphere.clone(),
-                 material: mats.add(StandardMaterial{base_color:color,
-                                                     emissive: color,
-                                                     perceptual_roughness:0.5,
-                                                     ..default() }) ,
-                 transform: Transform::from_translation(
-                   vec3(r, g, b) * 80.0 - Vec3::ONE * 40.0) ,..default()}
-    ));
-  }}
+  let r = rng(0.01..0.99);
+  let g = rng(0.01..0.99);
+  let b = rng(0.01..0.99);
+  let color = Color::rgb(r, g, b);
+  let mass = (rng(0.0002..0.6) as f32).powi(2);
+  let speed = 0.03;
+  c.spawn((
+    Planet { color ,
+             vel: vec3(rng(-speed..speed),rng(-speed..speed), rng(-speed..speed)),
+             mass },
+    PbrBundle{ mesh: sphere.clone(),
+               material: mats.add(StandardMaterial{base_color:color,
+                                                   emissive: color,
+                                                   perceptual_roughness:0.5,
+                                                   ..default() }) ,
+               transform: Transform::from_translation(
+                 vec3(r, g, b) * 80.0 - Vec3::ONE * 40.0) ,
+               ..default() }));}}
 }
 fn camera_movement(mut camera: Query<&mut Transform, With<Camera>>,
                    keyboard_input: Res<Input<KeyCode>>,
                    mut er: EventReader<MouseMotion>) {
-  let dir = [(KeyCode::D, Vec3::X),
-             (KeyCode::A, Vec3::NEG_X),
-             (KeyCode::W, Vec3::NEG_Z),
-             (KeyCode::S, Vec3::Z),
-             (KeyCode::ShiftLeft, Vec3::Y),
-             (KeyCode::ControlLeft, Vec3::NEG_Y)].into_iter()
-                                                 .filter_map(|(k, v)| {
-                                                   keyboard_input.pressed(k).then_some(v)
-                                                 })
-                                                 .sum::<Vec3>()
-                                                 .normalize_or_zero();
   if let Ok(mut t) = camera.get_single_mut() {
+    let dir = [(KeyCode::D, Vec3::X),
+               (KeyCode::A, Vec3::NEG_X),
+               (KeyCode::W, Vec3::NEG_Z),
+               (KeyCode::S, Vec3::Z),
+               (KeyCode::ShiftLeft, Vec3::Y),
+               (KeyCode::ControlLeft, Vec3::NEG_Y)].into_iter()
+                                                   .filter_map(|(k, v)| {
+                                                     keyboard_input.pressed(k).then_some(v)
+                                                   })
+                                                   .sum::<Vec3>()
+                                                   .normalize_or_zero();
+    // t.as_mut()
+    //  .update(|v| Transform { translation: v.translation + v.rotation * dir * 0.6,
+    //                          ..v });
+    let d = t.rotation * dir * 0.6;
+    t.translation += d;
+    let rot_scale = 0.004;
     for &MouseMotion { delta: Vec2 { x, y } } in er.read() {
-      let rot_scale = 0.004;
       t.rotate_local_x(-y * rot_scale);
       t.rotate_local_y(-x * rot_scale);
     }
-    let d = t.rotation * dir * 0.6;
-    t.translation += d;
   }
 }
 #[bevy_main]
 fn main() {
-  App::new().add_plugins((DefaultPlugins).set(WindowPlugin { primary_window:
-                                                             Some(Window { cursor: Cursor {visible: false,grab_mode: CursorGrabMode::Confined,..default()},
-                                                                           fit_canvas_to_parent: true,
-                                                                           present_mode: PresentMode::AutoNoVsync,
-                                                                           title: "solarsystem_bevy".to_string(),
-                                                                           ..default() }),
-                                                             ..default() }))
-            .insert_resource(ClearColor(Color::BLACK))
-            .add_systems(Startup, init)
-            .add_systems(Update,
-                         (movement,
-                          gravity,
-                          collisions,
-                          bevy::window::close_on_esc,
-                          camera_movement))
-            .run();
+  App::new()
+    .add_plugins(
+      (DefaultPlugins)
+        .set(
+          WindowPlugin {
+            primary_window:
+            Some(
+              Window {
+                cursor: Cursor {visible: false,
+                                grab_mode: CursorGrabMode::Confined,
+                                ..default()},
+                canvas: Some("bevy".to_string()),
+                fit_canvas_to_parent: true,
+                present_mode: PresentMode::AutoNoVsync,
+                title: "solarsystem_bevy".to_string(),
+                ..default() }),
+            ..default() }))
+    .insert_resource(ClearColor(Color::BLACK))
+    .add_systems(Startup, init)
+    .add_systems(Update,
+                 (movement,
+                  gravity,
+                  collisions,
+                  bevy::window::close_on_esc,
+                  camera_movement))
+    .run();
 }
 // trunk build --release --public-url "solarsystem_bevy"
