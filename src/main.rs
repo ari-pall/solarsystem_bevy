@@ -134,3 +134,4 @@ fn main() {
                           camera_movement))
             .run();
 }
+// trunk build --release --public-url "solarsystem_bevy"
