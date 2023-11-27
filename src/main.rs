@@ -134,4 +134,3 @@ fn main() {
                           camera_movement))
             .run();
 }
-// sudo wasm-bindgen target/wasm32-unknown-unknown/release/solarsystem_bevy.wasm --out-dir wasm
