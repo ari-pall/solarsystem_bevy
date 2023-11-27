@@ -5,11 +5,8 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
-rust_utils = {path = "../rust_utils"}
-bevy_panorbit_camera = "*"
-rand = "*"
-wasm-bindgen = "0.2.88"
+# [lib]
+# crate-type = ["cdylib", "rlib"]
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
@@ -19,19 +16,26 @@ opt-level = 1
 [profile.dev.package."*"]
 opt-level = 3
 
-[dependencies.bevy]
-version = "*"
-# the features!!!
-# default-features = false
-# features = [
-#     "bevy_asset",
-# ]
-# default-features = true
-features = [
-    "asset_processor",
-    # "embedded_watcher",
+[profile.release]
+lto = true
+codegen-units = 1
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+[features]
+dev = ["bevy/dynamic_linking"]
+
+[dependencies]
+rust_utils = {path = "../rust_utils"}
+rand = "*"
+wasm-bindgen = "0.2.88"
+bevy = { version = "*", default-features = false, features = [
     "animation",
     "bevy_asset",
+    "bevy_gilrs",
     "bevy_scene",
     "bevy_winit",
     "bevy_core_pipeline",
@@ -40,13 +44,45 @@ features = [
     "bevy_render",
     "bevy_sprite",
     "bevy_text",
-    # "bevy_ui",
-    # "png",
-    # "jpeg",
-    # "hdr",
-    # "zstd",
-    # "x11",
-    "ktx2",
+    "bevy_ui",
+    "multi-threaded",
+    "png",
+    "hdr",
+    "x11",
+    "bevy_gizmos",
     "tonemapping_luts",
-    "serialize",
-    ]
+    "default_font",
+    "webgl2",
+] }
+
+# [dependencies.bevy]
+# version = "*"
+# # the features!!!
+# # default-features = false
+# # features = [
+# #     "bevy_asset",
+# # ]
+# # default-features = true
+# features = [
+#     # "asset_processor",
+#     # "embedded_watcher",
+#     "animation",
+#     "bevy_asset",
+#     "bevy_scene",
+#     "bevy_winit",
+#     "bevy_core_pipeline",
+#     "bevy_pbr",
+#     "bevy_gltf",
+#     "bevy_render",
+#     "bevy_sprite",
+#     "bevy_text",
+#     # "bevy_ui",
+#     # "png",
+#     # "jpeg",
+#     # "hdr",
+#     # "zstd",
+#     # "x11",
+#     "ktx2",
+#     "tonemapping_luts",
+#     "serialize",
+#     ]
