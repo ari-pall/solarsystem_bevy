@@ -142,7 +142,7 @@ fn main() {
                 cursor: Cursor {visible: false,
                                 grab_mode: CursorGrabMode::Confined,
                                 ..default()},
-                canvas: Some("bevy".to_string()),
+                canvas: Some("#bevy".to_string()),
                 fit_canvas_to_parent: true,
                 present_mode: PresentMode::AutoNoVsync,
                 title: "solarsystem_bevy".to_string(),
