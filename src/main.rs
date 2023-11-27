@@ -1,9 +1,11 @@
 #![allow(unused_imports)]
 #![allow(dead_code)]
 
-use bevy::window::{Cursor, CursorGrabMode, WindowMode};
+use bevy::window::PresentMode;
 
-use {bevy::{input::mouse::MouseMotion, prelude::*},
+use {bevy::{input::mouse::MouseMotion,
+            prelude::*,
+            window::{Cursor, CursorGrabMode, WindowMode}},
      rand::{distributions::uniform::{SampleRange, SampleUniform},
             prelude::*},
      rust_utils::dotimes};
@@ -124,11 +126,11 @@ fn camera_movement(mut camera: Query<&mut Transform, With<Camera>>,
 #[bevy_main]
 fn main() {
   App::new().add_plugins((DefaultPlugins).set(WindowPlugin { primary_window:
-                                                             Some(Window { cursor:
-                                                                             Cursor {visible: false,grab_mode: CursorGrabMode::Confined,..default()},
-                                                                           mode: WindowMode::Fullscreen,
+                                                             Some(Window { cursor: Cursor {visible: false,grab_mode: CursorGrabMode::Confined,..default()},
+                                                                           fit_canvas_to_parent: true,
+                                                                           present_mode: PresentMode::AutoNoVsync,
                                                                            title: "solarsystem_bevy".to_string(),
-                                                                             ..default() }),
+                                                                           ..default() }),
                                                              ..default() }))
             .insert_resource(ClearColor(Color::BLACK))
             .add_systems(Startup, init)
