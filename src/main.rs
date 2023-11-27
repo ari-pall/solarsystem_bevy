@@ -1,6 +1,8 @@
 #![allow(unused_imports)]
 #![allow(dead_code)]
 
+use bevy::window::{Cursor, CursorGrabMode, WindowMode};
+
 use {bevy::{input::mouse::MouseMotion, prelude::*},
      rand::{distributions::uniform::{SampleRange, SampleUniform},
             prelude::*},
@@ -69,9 +71,7 @@ fn collisions(mut q: Query<(Entity, &mut Transform, &mut Planet)>, mut c: Comman
 const NUM_PLANETS: usize = 150;
 fn init(mut c: Commands,
         mut mats: ResMut<Assets<StandardMaterial>>,
-        mut windows: Query<&mut Window>,
         mut meshes: ResMut<Assets<Mesh>>) {
-  windows.single_mut().set_maximized(true);
   c.spawn(Camera3dBundle { transform:
                             Transform::from_xyz(-60.0, 0.0, 0.0).looking_at(Vec3::Y, Vec3::Z),
                           ..default() });
@@ -123,7 +123,13 @@ fn camera_movement(mut camera: Query<&mut Transform, With<Camera>>,
 }
 #[bevy_main]
 fn main() {
-  App::new().add_plugins((DefaultPlugins))
+  App::new().add_plugins((DefaultPlugins).set(WindowPlugin { primary_window:
+                                                             Some(Window { cursor:
+                                                                             Cursor {visible: false,grab_mode: CursorGrabMode::Confined,..default()},
+                                                                           mode: WindowMode::Fullscreen,
+                                                                           title: "solarsystem_bevy".to_string(),
+                                                                             ..default() }),
+                                                             ..default() }))
             .insert_resource(ClearColor(Color::BLACK))
             .add_systems(Startup, init)
             .add_systems(Update,
